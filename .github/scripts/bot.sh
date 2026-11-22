@@ -147,11 +147,9 @@ $(repo_context)" json)
       apply_labels "$number" "$reply_labels"
       exit 0
     fi
-    if [ -n "$comment" ]; then
-      post_comment "$number" "$comment"
-    else
-      log "no comment field in JSON; labels only"
-    fi
+    # Issue and PR text is attacker-controlled. Never publish model-generated
+    # prose automatically; retain only the allowlisted labels below.
+    log "model comment suppressed; labels only"
     apply_labels "$number" "$reply_labels"
     ;;
 
@@ -169,7 +167,7 @@ $question
 Repository file list:
 $(repo_context)")
     [ -z "$answer" ] && { log "model returned nothing"; exit 0; }
-    post_comment "$number" "$answer"
+    log "model answer suppressed; refusing to publish attacker-influenced prose"
     ;;
 
   pull_request)
@@ -188,7 +186,7 @@ $body
 Diff (truncated):
 $diff")
     [ -z "$answer" ] && { log "model returned nothing"; exit 0; }
-    post_comment "$number" "$answer"
+    log "model summary suppressed; refusing to publish attacker-influenced prose"
     ;;
 
   *)

@@ -22,6 +22,7 @@
  *   "neutralize": { "fields":["response_code","code","errno","ret"], "success":0,
  *                   "flags":{"success":true,"message":"ok"} },
  *   "forward": true,                            // forward real req then rewrite code; false = offline stub
+ *   "allowInsecureTls": false,                  // opt in to invalid TLS certificates
  *   "loginUrlPattern": "/login",               // navigations matching this are suppressed as a fallback
  *   "stubs": [ {"match":"permission|menu|role", "body": { ...full-feature menu... }} ],
  *   "routes": ["/dashboard","/device", ...],   // from routes.txt or the forged menu
@@ -32,7 +33,6 @@
  *   "waitMs": 1200, "perRouteMs": 900, "headless": true
  * }
  */
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const fs = require('fs');
 const path = require('path');
 
@@ -46,6 +46,7 @@ function loadCfg(p) {
   c.chromium = c.chromium || process.env.CHROMIUM || '/usr/bin/chromium';
   c.neutralize = c.neutralize || { fields: ['response_code', 'code', 'errno', 'ret', 'status'], success: 0, flags: { success: true } };
   c.forward = c.forward !== false;
+  c.allowInsecureTls = c.allowInsecureTls === true;
   c.apiPattern = new RegExp(c.apiPattern || '/api/|/rest/|/service/|/graphql|/gateway/');
   c.loginUrlPattern = c.loginUrlPattern || '/login';
   c.routes = c.routes || ['/'];
@@ -94,7 +95,12 @@ function neutralize(txt, n) {
     process.env.HTTP_PROXY = cfg.proxy;
     process.env.HTTPS_PROXY = cfg.proxy;
   }
-  const launchArgs = ['--no-sandbox', '--disable-dev-shm-usage', '--ignore-certificate-errors'];
+  const launchArgs = ['--no-sandbox', '--disable-dev-shm-usage'];
+  if (cfg.allowInsecureTls) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    launchArgs.push('--ignore-certificate-errors');
+    console.warn('[!] TLS certificate verification is disabled by config');
+  }
   if (cfg.proxy) launchArgs.push(`--proxy-server=${cfg.proxy}`);
   const browser = await puppeteer.launch({
     executablePath: cfg.chromium, headless: cfg.headless ? 'new' : false,

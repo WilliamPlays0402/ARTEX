@@ -357,7 +357,8 @@ Set the `ARTEX_PG_*` variables below. The example uses Docker Desktop's
 the reachable hostname of your database server.
 
 ```bash
-docker pull ghcr.io/baarai/artex:latest
+export ARTEX_IMAGE_REF='ghcr.io/baarai/artex@sha256:<verified-digest>'
+docker pull "$ARTEX_IMAGE_REF"
 
 mkdir -p data keys
 docker run -d --name artex \
@@ -373,7 +374,7 @@ docker run -d --name artex \
   -e ARTEX_JWT_KEY_DIR=/app/keys \
   -v "$PWD/data:/app/data" \
   -v "$PWD/keys:/app/keys" \
-  ghcr.io/baarai/artex:latest
+  "$ARTEX_IMAGE_REF"
 # → http://localhost:8787  (docker logs artex | grep "Setup token")
 ```
 
@@ -408,7 +409,8 @@ docker compose -f docker-compose.ghcr.yml pull
 docker compose -f docker-compose.ghcr.yml up -d
 ```
 
-Pin a version with `ARTEX_IMAGE_TAG=v0.7.1` in `.env` (or `0.7.1`); unset uses `latest`. To use
+Set `ARTEX_IMAGE_REF` in `.env` to an immutable GHCR reference, preferably a release digest
+such as `ghcr.io/baarai/artex@sha256:<verified-digest>`; do not use `:latest` or an unverified tag. To use
 custom skills, copy them into a host directory and add `- ./skills:/app/skills` to the `artex`
 volumes, which overrides the built-in `/app/skills`.
 
@@ -590,7 +592,7 @@ service, the `depends_on` block, and the `pgdata` volume from `docker-compose.ym
 ```yaml
 services:
   artex:
-    image: ghcr.io/baarai/artex:latest
+    image: ${ARTEX_IMAGE_REF:?Set ARTEX_IMAGE_REF to a verified immutable digest}
     security_opt:
       - "no-new-privileges:true"
     environment:
@@ -785,8 +787,8 @@ docker compose up -d artex
 docker image prune -f            # optional
 ```
 
-If running the prebuilt `ghcr.io/baarai/artex` container directly, pull the new tag (`docker pull
-ghcr.io/baarai/artex:latest` or a pinned `:v<version>`) and recreate the container with the same
+If running the prebuilt `ghcr.io/baarai/artex` container directly, pull a new immutable digest
+reference and recreate the container with the same
 `/app/data` and `/app/keys` mounts. If you run the prebuilt Compose stack, the update is:
 
 ```bash

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:f2f98726820d0342055351c6e9d36e705f5bfffb3dd53ff556325114b08afb6d
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-artex}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}
@@ -23,6 +23,7 @@ services:
       args:
         ARTEX_VERSION: ${ARTEX_VERSION:-dev}
     image: artex:local
+    command: ["-addr", ":8787", "-proxy", ":8788", "-exec-uid", "10001", "-exec-gid", "10001"]
     # Agent processes run as an unprivileged executor (-exec-uid): no setuid program
     # or file capability may raise them back to root.
     security_opt:

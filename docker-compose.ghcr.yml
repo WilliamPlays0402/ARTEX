@@ -4,13 +4,13 @@
 #   docker compose -f docker-compose.ghcr.yml pull
 #   docker compose -f docker-compose.ghcr.yml up -d
 #
-# Set POSTGRES_PASSWORD in .env. Pin the image with ARTEX_IMAGE_TAG=v0.7.1 in
-# .env; unset uses latest. The image carries the built-in /app/skills; this file
+# Set POSTGRES_PASSWORD and an immutable ARTEX_IMAGE_REF in .env. The image carries
+# the built-in /app/skills; this file
 # does not mount a host skills/ directory. To use custom skills, copy them into a
 # host directory and add `- ./skills:/app/skills` to the artex volumes.
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:f2f98726820d0342055351c6e9d36e705f5bfffb3dd53ff556325114b08afb6d
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-artex}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Please set POSTGRES_PASSWORD in .env}
@@ -25,7 +25,8 @@ services:
     restart: unless-stopped
 
   artex:
-    image: ghcr.io/baarai/artex:${ARTEX_IMAGE_TAG:-latest}
+    image: ${ARTEX_IMAGE_REF:?Please set ARTEX_IMAGE_REF to a pinned GHCR image reference}
+    command: ["-addr", ":8787", "-proxy", ":8788", "-exec-uid", "10001", "-exec-gid", "10001"]
     # Agent processes run as an unprivileged executor (-exec-uid): no setuid program
     # or file capability may raise them back to root.
     security_opt:
